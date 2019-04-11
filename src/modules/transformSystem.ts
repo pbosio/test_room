@@ -95,7 +95,7 @@ abstract class TransformTaskWithFinishCallback extends TransformTask{
     }
 }
 
-class MoveTask extends TransformTaskWithFinishCallback{
+export class MoveTask extends TransformTaskWithFinishCallback{
 
     private start: ReadOnlyVector3
     private end: ReadOnlyVector3
@@ -126,7 +126,7 @@ class MoveTask extends TransformTaskWithFinishCallback{
     }
 }
 
-class RotateTask extends TransformTaskWithFinishCallback{
+export class RotateTask extends TransformTaskWithFinishCallback{
     private start: ReadOnlyQuaternion
     private end: ReadOnlyQuaternion
     private speed: number

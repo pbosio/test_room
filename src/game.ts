@@ -8,9 +8,9 @@ class StandardGLTFEntity extends Entity {
   readonly shape: GLTFShape
   readonly transform: Transform
 
-  constructor(modelPath: string, position: Vector3 = Vector3.Zero(), rotation: Quaternion = Quaternion.Identity, scale: Vector3 = Vector3.One()){
+  constructor(shape: GLTFShape, position: Vector3 = Vector3.Zero(), rotation: Quaternion = Quaternion.Identity, scale: Vector3 = Vector3.One()){
     super()
-    this.shape = new GLTFShape(modelPath)
+    this.shape = shape
     this.transform = new Transform({position: position, rotation: rotation, scale: scale})
 
     this.addComponent(this.shape)
@@ -54,10 +54,10 @@ class Toggle {
  * ------------------------
  */
 
-const bookshelfDefaultPosition = new Vector3(7.86,-0.92,7)
+const bookshelfDefaultPosition = new Vector3(7.76,-0.92,7)
 
 //create entity with gltf model and transform
-const bookshelf = new StandardGLTFEntity("models/bookshelf.gltf", bookshelfDefaultPosition, Quaternion.Euler(0,180,0), new Vector3(1,1.3,1))
+const bookshelf = new StandardGLTFEntity(new GLTFShape("models/bookshelf.gltf"), bookshelfDefaultPosition, Quaternion.Euler(0,180,0), new Vector3(1,1.3,1))
 
 //create toggle component for the entity
 const bookshelfToggle = new Toggle()
@@ -89,7 +89,7 @@ engine.addEntity(bookshelf)
 const chandelierDefaultRotation = Quaternion.Euler(0,90,0)
 
 //create entity with gltf model and transform
-const chandelier = new StandardGLTFEntity("models/chandelier.glb", new Vector3(0,1.05,0), chandelierDefaultRotation)
+const chandelier = new StandardGLTFEntity(new GLTFShape("models/chandelier.glb"), new Vector3(0,1.05,0), chandelierDefaultRotation)
 //set chandelier as child of bookshelf
 chandelier.setParent(bookshelf)
 
@@ -137,11 +137,11 @@ engine.addEntity(chandelier)
 const chestTopDefaultRotation = Quaternion.Euler(0,180,0)
 
 //create chest entity
-const chestBase = new StandardGLTFEntity("models/chestBase.glb", new Vector3(1,0,7.5))
+const chestBase = new StandardGLTFEntity(new GLTFShape("models/chestBase.glb"), new Vector3(1,0,7.5))
 engine.addEntity(chestBase)
 
 //create chest lid
-const chestTop = new StandardGLTFEntity("models/chestTop.glb", new Vector3(0,0.36,0.33), chestTopDefaultRotation)
+const chestTop = new StandardGLTFEntity(new GLTFShape("models/chestTop.glb"), new Vector3(0,0.36,0.33), chestTopDefaultRotation)
 
 //set chest as parent
 chestTop.setParent(chestBase)
@@ -173,6 +173,132 @@ chestTop.addComponent(new OnClick(event=>{
 //add entity to engine
 engine.addEntity(chestBase)
 
+/**
+ * ------------------------
+ * DOORS
+ * ------------------------
+ */
+
+const doorShape = new GLTFShape("models/Door.gltf")
+doorShape.withCollisions = false
+
+const doorDefaultRotation = Quaternion.Euler(0,0,0)
+const door = new StandardGLTFEntity(doorShape, new Vector3(13,0,7.9), doorDefaultRotation)
+const doorToggle = new Toggle()
+doorToggle.onValueChanged(value=>{
+  if (value){
+    transfromSystem.rotate(door.transform, door.transform.rotation, doorDefaultRotation.multiply(Quaternion.Euler(0,-110,0)), 0.8)
+  }
+  else{
+    transfromSystem.rotate(door.transform, door.transform.rotation, doorDefaultRotation, 0.8)
+  }
+})
+door.addComponent(doorToggle)
+
+door.addComponent(new OnClick(event =>{
+  doorToggle.toggle()
+}))
+
+engine.addEntity(door)
+
+
+//this won't work until issue with animations always looping is fixed
+/*const door1 = new StandardGLTFEntity(doorShape, new Vector3(11,0,8), Quaternion.Euler(0,-90,0))
+const door1Animator = new Animator()
+door1.addComponent(door1Animator)
+const door1ClipOpen = new AnimationClip("Open")
+const door1ClipClose = new AnimationClip("Close")
+door1Animator.addClip(door1ClipOpen)
+door1Animator.addClip(door1ClipClose)
+const door1Toggle = new Toggle(false);
+door1Toggle.onValueChanged(value=>{
+  if (value){
+    door1ClipOpen.play()
+  }
+  else{
+    door1ClipClose.play()
+  }
+})
+door1.addComponent(door1Toggle)
+door1.addComponent(new OnClick(event=>{
+  door1Toggle.toggle()
+}))
+engine.addEntity(door1);
+*/
+
+/**
+ * ------------------------
+ * COUCH
+ * ------------------------
+ */
+const couchDefaultPosition = new Vector3(7, 0, 3)
+const couch = new StandardGLTFEntity(new GLTFShape("models/couch.glb"), couchDefaultPosition)
+const couchToggle = new Toggle();
+couchToggle.onValueChanged(value=>{
+  if (value){
+    transfromSystem.move(couch.transform, couch.transform.position, couchDefaultPosition.add(new Vector3(0,0,-1)), 0.3)
+  }
+  else{
+    transfromSystem.move(couch.transform, couch.transform.position, couchDefaultPosition, 0.3)
+  }
+})
+couch.addComponent(couchToggle)
+couch.addComponent(new OnClick(event=>{
+  couchToggle.toggle()
+}))
+
+
+engine.addEntity(couch)
+
+/**
+ * ------------------------
+ * FAKE WALL
+ * ------------------------
+ */
+const fakeWall = new Entity()
+const fakeWallShape = new BoxShape()
+fakeWallShape.withCollisions = true
+fakeWall.addComponent(fakeWallShape)
+fakeWall.addComponent(new Transform({
+  position: new Vector3(15.9,2,7),
+  rotation: Quaternion.Euler(0,90,0),
+  scale: new Vector3(2,4,0.2)
+}))
+const fakeWallToggle = new Toggle(false)
+fakeWallToggle.onValueChanged(value=>{
+  if (value){
+    let fakeWallTransform = fakeWall.getComponent(Transform)
+    transfromSystem.move(fakeWallTransform, fakeWallTransform.position, fakeWallTransform.position.add(new Vector3(0,3,0)), 3)
+  }
+})
+engine.addEntity(fakeWall)
+
+/**
+ * ------------------------
+ * COINS
+ * ------------------------
+ */
+let amountOfCoinPickedUp: number = 0
+
+const coins: StandardGLTFEntity[] = []
+const coinShape = new GLTFShape("models/coin.glb")
+
+coins.push(new StandardGLTFEntity(coinShape, new Vector3(7,0,4.17)))
+coins.push(new StandardGLTFEntity(coinShape, new Vector3(0,0.4,0)))
+coins[coins.length-1].setParent(chestBase)
+coins.push(new StandardGLTFEntity(coinShape, new Vector3(12,0.05,7.89), Quaternion.Euler(-90,0,0)))
+
+coins.forEach(coin => {
+  coin.addComponent(new OnClick(event=>{
+    amountOfCoinPickedUp++
+    if (amountOfCoinPickedUp >= coins.length){
+      fakeWallToggle.set(true)
+    }
+    engine.removeEntity(coin)
+  }))
+  engine.addEntity(coin)  
+});
+
 
 /**
  * ------------------------
@@ -180,33 +306,35 @@ engine.addEntity(chestBase)
  * ------------------------
  */
 //room 1 far wall
-CreateWall(new Vector3(4,2,8), Quaternion.Euler(0,0,0), new Vector3(8,4,1))
+CreateWall(new Vector3(8,2,8), Quaternion.Euler(0,0,0), new Vector3(16,4,0.2))
 
 //room 1 right wall 1
-CreateWall(new Vector3(8,2,3.35), Quaternion.Euler(0,90,0), new Vector3(6.7,4,1))
+CreateWall(new Vector3(8,2,3.35), Quaternion.Euler(0,90,0), new Vector3(6.7,4,0.2))
 
 //room 1 right wall 2
-CreateWall(new Vector3(8,2,7.9), Quaternion.Euler(0,90,0), new Vector3(0.2,4,1))
+CreateWall(new Vector3(8,2,7.95), Quaternion.Euler(0,90,0), new Vector3(0.3,4,0.2))
 
 //room 1 right wall 3
-CreateWall(new Vector3(8,3,7.2), Quaternion.Euler(0,90,0), new Vector3(1.2,2,1))
+CreateWall(new Vector3(8,3,7.2), Quaternion.Euler(0,90,0), new Vector3(1.2,2,0.2))
 
 //big wall near
-CreateWall(new Vector3(12,2,0), Quaternion.Euler(0,0,0), new Vector3(8,4,1))
+CreateWall(new Vector3(12,2,0.1), Quaternion.Euler(0,0,0), new Vector3(8,4,0.2))
 
 //big wall far
-CreateWall(new Vector3(8,2,16), Quaternion.Euler(0,0,0), new Vector3(16,4,1))
+CreateWall(new Vector3(8,2,15.9), Quaternion.Euler(0,0,0), new Vector3(16,4,0.2))
 
 //big wall left
-CreateWall(new Vector3(0,2,12), Quaternion.Euler(0,90,0), new Vector3(8,4,1))
+CreateWall(new Vector3(0.1,2,12), Quaternion.Euler(0,90,0), new Vector3(8,4,0.2))
 
-//big wall right
-CreateWall(new Vector3(16,2,8), Quaternion.Euler(0,90,0), new Vector3(16,4,1))
+//big wall right 1
+CreateWall(new Vector3(15.9,2,3), Quaternion.Euler(0,90,0), new Vector3(6,4,0.2))
 
+//big wall right 2
+CreateWall(new Vector3(15.9,2,12), Quaternion.Euler(0,90,0), new Vector3(8,4,0.2))
 
 function CreateWall(position: Vector3, rotation: Quaternion, scale: Vector3){
   const wall = new Entity()
-  const wallShape = new PlaneShape()
+  const wallShape = new BoxShape()
   wallShape.withCollisions = true
   wall.addComponent(wallShape)
   wall.addComponent(new Transform({
@@ -217,16 +345,22 @@ function CreateWall(position: Vector3, rotation: Quaternion, scale: Vector3){
   engine.addEntity(wall)
 }
 
-/*const d = new Entity()
-const sh = new GLTFShape("models/door1.glb")
-const t = new Transform({position: Vector3.One()})
-const an = new Animator()
-const cl = new AnimationClip("open")
-d.addComponent(sh)
-d.addComponent(t)
-d.addComponent(an)
-cl.looping = true
-cl.play()
-an.addClip(cl)
 
-engine.addEntity(d)*/
+/*const billboard = new Entity()
+billboard.addComponent(new Billboard())
+billboard.addComponent(new Transform({position: new Vector3(2,2,2)}))
+
+const plane = new Entity()
+const planeShape = new PlaneShape()
+plane.addComponent(planeShape)
+let text = new Texture("images/coin.png")
+let mat = new Material()
+mat.albedoTexture = text
+mat.transparencyMode = 3
+mat.disableLighting = true
+plane.addComponent(mat)
+plane.addComponent(new Transform())
+plane.setParent(billboard)
+
+engine.addEntity(billboard)
+engine.addEntity(plane)*/

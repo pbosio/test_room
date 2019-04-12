@@ -179,11 +179,18 @@ engine.addEntity(chestBase)
  * ------------------------
  */
 
+//door gltf shape
 const doorShape = new GLTFShape("models/Door.gltf")
+//we don't need collisions
 doorShape.withCollisions = false
 
+//define door's default rotation
 const doorDefaultRotation = Quaternion.Euler(0,0,0)
+
+//door entity
 const door = new StandardGLTFEntity(doorShape, new Vector3(13,0,7.9), doorDefaultRotation)
+
+//create door's toggle component
 const doorToggle = new Toggle()
 doorToggle.onValueChanged(value=>{
   if (value){
@@ -193,12 +200,15 @@ doorToggle.onValueChanged(value=>{
     transfromSystem.rotate(door.transform, door.transform.rotation, doorDefaultRotation, 0.8)
   }
 })
+//add toggle component to entity
 door.addComponent(doorToggle)
 
+//listen to click on door
 door.addComponent(new OnClick(event =>{
   doorToggle.toggle()
 }))
 
+//add entity to the engine
 engine.addEntity(door)
 
 
@@ -231,8 +241,13 @@ engine.addEntity(door1);
  * COUCH
  * ------------------------
  */
+
+//define couch default position
 const couchDefaultPosition = new Vector3(7, 0, 3)
+//create couch entity
 const couch = new StandardGLTFEntity(new GLTFShape("models/couch.glb"), couchDefaultPosition)
+
+//create toggle component for couch
 const couchToggle = new Toggle();
 couchToggle.onValueChanged(value=>{
   if (value){
@@ -242,12 +257,15 @@ couchToggle.onValueChanged(value=>{
     transfromSystem.move(couch.transform, couch.transform.position, couchDefaultPosition, 0.3)
   }
 })
+//add toggle component to couch
 couch.addComponent(couchToggle)
+
+//listen to click event
 couch.addComponent(new OnClick(event=>{
   couchToggle.toggle()
 }))
 
-
+//add couch entity to the engine
 engine.addEntity(couch)
 
 /**
@@ -255,15 +273,25 @@ engine.addEntity(couch)
  * FAKE WALL
  * ------------------------
  */
+
+//create fake wall that will open at the end of the level
 const fakeWall = new Entity()
+
+//create shape for the fake wall
 const fakeWallShape = new BoxShape()
+//enable collision
 fakeWallShape.withCollisions = true
+//add shape component to entity
 fakeWall.addComponent(fakeWallShape)
+
+//set transform for the fake wall
 fakeWall.addComponent(new Transform({
   position: new Vector3(15.9,2,7),
   rotation: Quaternion.Euler(0,90,0),
   scale: new Vector3(2,4,0.2)
 }))
+
+//create toggle component
 const fakeWallToggle = new Toggle(false)
 fakeWallToggle.onValueChanged(value=>{
   if (value){
@@ -271,6 +299,8 @@ fakeWallToggle.onValueChanged(value=>{
     transfromSystem.move(fakeWallTransform, fakeWallTransform.position, fakeWallTransform.position.add(new Vector3(0,3,0)), 3)
   }
 })
+
+//add fake wall to the engine
 engine.addEntity(fakeWall)
 
 /**
@@ -278,27 +308,80 @@ engine.addEntity(fakeWall)
  * COINS
  * ------------------------
  */
+
+//declare the variable for the amount of coins user pick up
 let amountOfCoinPickedUp: number = 0
 
+//create array to contain coins
 const coins: StandardGLTFEntity[] = []
+//coin gltf shape
 const coinShape = new GLTFShape("models/coin.glb")
 
+//create coins entities
 coins.push(new StandardGLTFEntity(coinShape, new Vector3(7,0,4.17)))
 coins.push(new StandardGLTFEntity(coinShape, new Vector3(0,0.4,0)))
+//set coin as a child of the chest cause this coin is inside of it
 coins[coins.length-1].setParent(chestBase)
 coins.push(new StandardGLTFEntity(coinShape, new Vector3(12,0.05,7.89), Quaternion.Euler(-90,0,0)))
 
+//iterate through coin array
 coins.forEach(coin => {
+  //listen for click on this coin
   coin.addComponent(new OnClick(event=>{
     amountOfCoinPickedUp++
+    signTextShape.value = amountOfCoinPickedUp + "/" + coins.length
     if (amountOfCoinPickedUp >= coins.length){
       fakeWallToggle.set(true)
     }
     engine.removeEntity(coin)
   }))
+  //add coin to the engine
   engine.addEntity(coin)  
 });
 
+/**
+ * ------------------------
+ * COINS SIGN
+ * ------------------------
+ */
+
+//coin sign that will appear over the fake wall
+const sign = new Entity()
+//create the shape of the sign
+const signShape = new PlaneShape()
+//create material for the sign
+let signMaterial = new Material()
+//add texture to material
+signMaterial.albedoTexture = new Texture("images/coin.png")
+//set it transoarency
+signMaterial.transparencyMode = 3
+
+//add shape component to the sign
+sign.addComponent(signShape)
+//add material to the sign
+sign.addComponent(signMaterial)
+//set sign position through transform component
+sign.addComponent(new Transform({position: new Vector3(0,0,-0.51), scale: new Vector3(0.3,0.2,1)}))
+//set fake wall as parent of the sign
+sign.setParent(fakeWall)
+
+//add entity to the engine
+engine.addEntity(sign)
+
+
+//create text for the sign
+const signText = new Entity()
+//create text shape comnponent
+const signTextShape = new TextShape("0/"+coins.length)
+//add shape component to the entity
+signText.addComponent(signTextShape)
+//set transform component
+signText.addComponent(new Transform({position: new Vector3(0,-0.2,-0.51)}))
+//set text as child of the fake wall
+signText.setParent(fakeWall)
+
+//add entity to the engine
+engine.addEntity(signText)
 
 /**
  * ------------------------
@@ -344,23 +427,3 @@ function CreateWall(position: Vector3, rotation: Quaternion, scale: Vector3){
   }))
   engine.addEntity(wall)
 }
-
-
-/*const billboard = new Entity()
-billboard.addComponent(new Billboard())
-billboard.addComponent(new Transform({position: new Vector3(2,2,2)}))
-
-const plane = new Entity()
-const planeShape = new PlaneShape()
-plane.addComponent(planeShape)
-let text = new Texture("images/coin.png")
-let mat = new Material()
-mat.albedoTexture = text
-mat.transparencyMode = 3
-mat.disableLighting = true
-plane.addComponent(mat)
-plane.addComponent(new Transform())
-plane.setParent(billboard)
-
-engine.addEntity(billboard)
-engine.addEntity(plane)*/

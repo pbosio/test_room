@@ -270,6 +270,37 @@ engine.addEntity(couch)
 
 /**
  * ------------------------
+ * CARPET
+ * ------------------------
+ */
+
+ //create carpet entity
+ const carpet = new StandardGLTFEntity(new GLTFShape("models/carpet.glb"), new Vector3(3,0,3))
+
+ //create toggle component
+ const carpetToggle = new Toggle()
+ carpetToggle.onValueChanged(value=>{
+   if (value){
+     transfromSystem.rotate(carpet.transform, carpet.transform.rotation, Quaternion.Euler(0,0,0),0.3)
+   }
+   else{
+    transfromSystem.rotate(carpet.transform, carpet.transform.rotation, Quaternion.Euler(0,45,0),0.3)
+   }
+ })
+
+ //add toggle component to entity
+ carpet.addComponent(carpetToggle)
+
+ //listen for click event
+ carpet.addComponent(new OnClick(event=>{
+  carpetToggle.toggle()
+ }))
+
+ //add entity to engine
+ engine.addEntity(carpet)
+
+/**
+ * ------------------------
  * FAKE WALL
  * ------------------------
  */
@@ -299,6 +330,11 @@ fakeWallToggle.onValueChanged(value=>{
     transfromSystem.move(fakeWallTransform, fakeWallTransform.position, fakeWallTransform.position.add(new Vector3(0,3,0)), 3)
   }
 })
+
+//add material to fakewall
+const wallMat = new Material()
+wallMat.albedoTexture = new Texture("images/fakewall_texture.jpg")
+fakeWall.addComponent(wallMat)
 
 //add fake wall to the engine
 engine.addEntity(fakeWall)

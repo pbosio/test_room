@@ -21,7 +21,7 @@ class StandardGLTFEntity extends Entity {
 //Toggle component to manage only two states
 @Component("toggle")
 class Toggle {
-  public enable: boolean = true
+  public enabled: boolean = true
 
   private onValueChangedCallback : (value: boolean) => void
   private on: boolean = false
@@ -30,7 +30,7 @@ class Toggle {
     this.on = startingValue
   }
 
-  public onValueChanged(onValueChangedCallback : (value: boolean) => void){
+  public setCallback(onValueChangedCallback : (value: boolean) => void){
     this.onValueChangedCallback = onValueChangedCallback
   }
 
@@ -63,7 +63,7 @@ const bookshelf = new StandardGLTFEntity(new GLTFShape("models/bookshelf.gltf"),
 const bookshelfToggle = new Toggle()
 
 //listen to changes on toggle state
-bookshelfToggle.onValueChanged(value=>{
+bookshelfToggle.setCallback(value=>{
   if (!value){
     //move bookshelg using transformSystem module
     transfromSystem.move(bookshelf.transform, bookshelf.transform.position, bookshelfDefaultPosition.add(new Vector3(0,0,-1)), 1)
@@ -97,19 +97,19 @@ chandelier.setParent(bookshelf)
 const chandelierToggle = new Toggle()
 
 //listen to changes on toggle state
-chandelierToggle.onValueChanged(value=>{
-  chandelierToggle.enable = false
+chandelierToggle.setCallback(value=>{
+  chandelierToggle.enabled = false
   if (!value){
     //rotate chandelier using transformSystem module and toggle bookshelf state when rotation finish
     transfromSystem.rotate(chandelier.transform, chandelier.transform.rotation, chandelierDefaultRotation.multiply(Quaternion.Euler(0,0,35)), 0.5, ()=>{
-      chandelierToggle.enable = true;
+      chandelierToggle.enabled = true;
       bookshelfToggle.toggle()
     })
   }
   else{
     //rotate chandelier and toggle bookshelf state when rotation finish
     transfromSystem.rotate(chandelier.transform, chandelier.transform.rotation, chandelierDefaultRotation, 0.5, ()=>{
-      chandelierToggle.enable = true;
+      chandelierToggle.enabled = true;
       bookshelfToggle.toggle()
     })   
   }
@@ -119,7 +119,7 @@ chandelier.addComponent(chandelierToggle)
 
 //listen to onclik event to change entity's toggle state
 chandelier.addComponent(new OnClick(event =>{
-  if (chandelierToggle.enable){
+  if (chandelierToggle.enabled){
     chandelierToggle.toggle();
   }
 }))
@@ -150,13 +150,13 @@ chestTop.setParent(chestBase)
 const chestTopToggle = new Toggle();
 
 //listen toggle state to open or close chest lid
-chestTopToggle.onValueChanged(value=>{
-  chestTopToggle.enable = false
+chestTopToggle.setCallback(value=>{
+  chestTopToggle.enabled = false
   if (value){
-    transfromSystem.rotate(chestTop.transform, chestTop.transform.rotation, chestTopDefaultRotation, 0.2, ()=>{chestTopToggle.enable = true})
+    transfromSystem.rotate(chestTop.transform, chestTop.transform.rotation, chestTopDefaultRotation, 0.2, ()=>{chestTopToggle.enabled = true})
   }
   else{
-    transfromSystem.rotate(chestTop.transform, chestTop.transform.rotation, chestTopDefaultRotation.multiply(Quaternion.Euler(-45,0,0)), 0.2, ()=>{chestTopToggle.enable = true})
+    transfromSystem.rotate(chestTop.transform, chestTop.transform.rotation, chestTopDefaultRotation.multiply(Quaternion.Euler(-45,0,0)), 0.2, ()=>{chestTopToggle.enabled = true})
   }
 })
 
@@ -165,7 +165,7 @@ chestTop.addComponent(chestTopToggle)
 
 //create onclick component
 chestTop.addComponent(new OnClick(event=>{
-  if (chestTopToggle.enable){
+  if (chestTopToggle.enabled){
     chestTopToggle.toggle()
   }
 }))
@@ -192,7 +192,7 @@ const door = new StandardGLTFEntity(doorShape, new Vector3(13,0,7.9), doorDefaul
 
 //create door's toggle component
 const doorToggle = new Toggle()
-doorToggle.onValueChanged(value=>{
+doorToggle.setCallback(value=>{
   if (value){
     transfromSystem.rotate(door.transform, door.transform.rotation, doorDefaultRotation.multiply(Quaternion.Euler(0,-110,0)), 0.8)
   }
@@ -249,7 +249,7 @@ const couch = new StandardGLTFEntity(new GLTFShape("models/couch.glb"), couchDef
 
 //create toggle component for couch
 const couchToggle = new Toggle();
-couchToggle.onValueChanged(value=>{
+couchToggle.setCallback(value=>{
   if (value){
     transfromSystem.move(couch.transform, couch.transform.position, couchDefaultPosition.add(new Vector3(0,0,-1)), 0.3)
   }
@@ -279,7 +279,7 @@ engine.addEntity(couch)
 
  //create toggle component
  const carpetToggle = new Toggle()
- carpetToggle.onValueChanged(value=>{
+ carpetToggle.setCallback(value=>{
    if (value){
      transfromSystem.rotate(carpet.transform, carpet.transform.rotation, Quaternion.Euler(0,0,0),0.3)
    }
@@ -324,7 +324,7 @@ fakeWall.addComponent(new Transform({
 
 //create toggle component
 const fakeWallToggle = new Toggle(false)
-fakeWallToggle.onValueChanged(value=>{
+fakeWallToggle.setCallback(value=>{
   if (value){
     let fakeWallTransform = fakeWall.getComponent(Transform)
     transfromSystem.move(fakeWallTransform, fakeWallTransform.position, fakeWallTransform.position.add(new Vector3(0,3,0)), 3)
@@ -346,7 +346,7 @@ engine.addEntity(fakeWall)
  */
 
 //declare the variable for the amount of coins user pick up
-let amountOfCoinPickedUp: number = 0
+let pickedCoins: number = 0
 
 //create array to contain coins
 const coins: StandardGLTFEntity[] = []
@@ -364,9 +364,9 @@ coins.push(new StandardGLTFEntity(coinShape, new Vector3(12,0.05,7.89), Quaterni
 coins.forEach(coin => {
   //listen for click on this coin
   coin.addComponent(new OnClick(event=>{
-    amountOfCoinPickedUp++
-    signTextShape.value = amountOfCoinPickedUp + "/" + coins.length
-    if (amountOfCoinPickedUp >= coins.length){
+    pickedCoins++
+    signTextShape.value = pickedCoins + "/" + coins.length
+    if (pickedCoins >= coins.length){
       fakeWallToggle.set(true)
     }
     engine.removeEntity(coin)
@@ -389,7 +389,7 @@ const signShape = new PlaneShape()
 let signMaterial = new Material()
 //add texture to material
 signMaterial.albedoTexture = new Texture("images/coin.png")
-//set it transoarency
+//set it transparency
 signMaterial.transparencyMode = 3
 
 //add shape component to the sign
